@@ -1,6 +1,7 @@
 # Academic Rhizome
 
-一个基于图数据库的学术知识图谱可视化应用，帮助研究者探索和分析学术论文之间的关系网络。
+一个基于图数据库的学术知识图谱可视化应用，帮助研究者探索和分析学术论文之间的关系网络。\
+![alt text](image.png)
 
 ## 功能特性
 
@@ -72,6 +73,7 @@ npm install
 
 1. 安装并启动 Neo4j 数据库
 2. 在 `backend/app/core/config.py` 中配置数据库连接信息
+3. 用户名neo4j 密码neo4j12345678
 
 ### 运行应用
 
@@ -98,10 +100,3 @@ GET /api/graph
 
 返回格式化的图谱数据，包含节点和边的信息。
 
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 许可证
-
-MIT License
