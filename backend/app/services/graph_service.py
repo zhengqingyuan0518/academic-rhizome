@@ -133,3 +133,84 @@ class GraphService:
         except Exception as e:
             print(f"Error in get_graph_for_echarts: {e}")
             return {"nodes": [], "links": [], "categories": []}
+
+    def execute_cypher_query(self, cypher_query: str, parameters: dict = None) -> dict:
+        """
+        执行自定义Cypher查询语句
+        """
+        try:
+            if parameters is None:
+                parameters = {}
+            
+            print(f"执行Cypher查询: {cypher_query}")
+            print(f"参数: {parameters}")
+            
+            # 执行查询
+            records, summary, keys = self.driver.execute_query(cypher_query, parameters)
+            
+            # 处理结果
+            result_data = []
+            for record in records:
+                row_data = {}
+                for key in keys:
+                    value = record[key]
+                    # 处理不同类型的值
+                    if hasattr(value, 'element_id'):  # Neo4j节点或关系对象
+                        if hasattr(value, 'labels'):  # 节点
+                            row_data[key] = {
+                                "type": "node",
+                                "id": value.element_id,
+                                "labels": list(value.labels),
+                                "properties": dict(value.items())
+                            }
+                        else:  # 关系
+                            row_data[key] = {
+                                "type": "relationship",
+                                "id": value.element_id,
+                                "type_name": value.type,
+                                "properties": dict(value.items()),
+                                "start_node": value.start_node.element_id,
+                                "end_node": value.end_node.element_id
+                            }
+                    else:
+                        row_data[key] = value
+                
+                result_data.append(row_data)
+            
+            # 处理统计计数器
+            counters_dict = {}
+            if hasattr(summary, 'counters') and summary.counters:
+                # 获取所有可用的计数器属性
+                counter_attrs = [
+                    'nodes_created', 'nodes_deleted', 'relationships_created', 
+                    'relationships_deleted', 'properties_set', 'labels_added', 
+                    'labels_removed', 'indexes_added', 'indexes_removed',
+                    'constraints_added', 'constraints_removed'
+                ]
+                
+                for attr in counter_attrs:
+                    if hasattr(summary.counters, attr):
+                        value = getattr(summary.counters, attr)
+                        if value > 0:  # 只记录有变化的计数器
+                            counters_dict[attr] = value
+            
+            # 返回结果统计信息
+            return {
+                "success": True,
+                "data": result_data,
+                "summary": {
+                    "records_count": len(records),
+                    "keys": keys,
+                    "query_type": summary.query_type if hasattr(summary, 'query_type') else "unknown",
+                    "counters": counters_dict
+                }
+            }
+            
+        except Exception as e:
+            print(f"Cypher查询执行错误: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "data": [],
+                "summary": {}
+            }

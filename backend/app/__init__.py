@@ -4,7 +4,8 @@ from flask_cors import CORS
 from neo4j import GraphDatabase
 from .core.config import Config
 from .services.graph_service import GraphService
-from .services.llm_service import LLMService
+from .services.llm_service import LLMService  # 添加这行导入
+from .services.deepseek_service import DeepSeekService
 # 导入蓝图和需要初始化的服务实例
 from .routes import api as api_routes
 
@@ -29,10 +30,19 @@ def create_app():
     # 3. 初始化所有服务
     # 将driver实例注入到GraphService中
     api_routes.graph_service = GraphService(driver)
-    api_routes.llm_service = LLMService() # 如果需要API Key, 从config加载: LLMService(api_key=app.config['OPENAI_API_KEY'])
+    api_routes.llm_service = LLMService() # 重新添加这行
+    
+    # 初始化DeepSeek服务
+    try:
+        api_routes.deepseek_service = DeepSeekService()
+        print("✅ DeepSeek服务初始化成功")
+    except Exception as e:
+        print(f"❌ DeepSeek服务初始化失败: {e}")
+        print(f"   错误详情: {type(e).__name__}")
+        # 创建一个空的服务以避免NoneType错误
+        api_routes.deepseek_service = None
 
     # 4. 注册蓝图
-    # 将路由部门（api_blueprint）的工作汇报给公司总部（app）
     app.register_blueprint(api_routes.api_blueprint)
 
     @app.route("/")
